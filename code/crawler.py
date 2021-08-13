@@ -3,6 +3,9 @@ import requests, ssl
 from urllib.request import Request, urlopen
 import urllib, colorama
 from urllib.parse import urlparse, urljoin
+###
+"https://www.thepythoncode.com/article/extract-all-website-links-python"
+###
 
 # init the colorama module
 colorama.init()
