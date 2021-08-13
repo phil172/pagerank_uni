@@ -3,9 +3,11 @@ import requests, ssl
 from urllib.request import Request, urlopen
 import urllib, colorama
 from urllib.parse import urlparse, urljoin
+from urllib.error import HTTPError
 ###
 "https://www.thepythoncode.com/article/extract-all-website-links-python"
 ###
+
 
 # init the colorama module
 colorama.init()
@@ -13,6 +15,7 @@ GREEN = colorama.Fore.GREEN
 GRAY = colorama.Fore.LIGHTBLACK_EX
 RESET = colorama.Fore.RESET
 YELLOW = colorama.Fore.YELLOW
+BLUE = colorama.Fore.BLUE
 
 ### URL and SSL
 url = "https://www.math.kit.edu/"
@@ -21,6 +24,9 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # initialize the set of links (unique links)
 internal_urls = set()
 external_urls = set()
+urls_pdf = set()
+urls_doc = set()
+img_doc = set()
 
 ### Validate URLs
 def is_valid(url):
@@ -35,6 +41,19 @@ def get_links(url):
     soup = BeautifulSoup(html_page, "lxml")
     for a_tag in soup.findAll('a'):
         href = a_tag.attrs.get("href")
+        ### Check if pdf link
+        if "pdf" in str(href):
+            print(f"{BLUE}[!] PDF link: {href}{BLUE}")
+            urls_pdf.add(href)
+            continue
+        if "doc" in str(href):
+            print(f"{BLUE}[!] DOC link: {href}{BLUE}")
+            urls_doc.add(href)
+            continue
+        if ".jpg" in str(href) or ".png" in str(href):
+            print(f"{BLUE}[!] IMG link: {href}{BLUE}")
+            urls_doc.add(href)
+            continue
         if href == "" or href is None:
             continue
         if not is_valid(href):
@@ -66,13 +85,21 @@ def crawl(url, max_urls=30):
     print(f"{YELLOW}[*] Crawling: {url}{RESET}")
     links = get_links(url)
     for link in links:
-        if urls_visited > max_urls:
-            break
-        crawl(link, max_urls=max_urls)
+        try:
+            if urls_visited > max_urls:
+                break
+            crawl(link, max_urls=max_urls)
+        except HTTPError as e:
+            print(e)
+            continue
+
 
 if __name__ == "__main__":
-    crawl(url, max_urls=30)
+    crawl(url, max_urls=40)
+    print(internal_urls)
     print("[+] Total Internal links:", len(internal_urls))
+    print("[+] Total PDF links:", len(urls_pdf))
+    print("[+] Total DOC links:", len(urls_doc))
     print("[+] Total External links:", len(external_urls))
     print("[+] Total URLs:", len(external_urls) + len(internal_urls))
-    #print("[+] Total crawled URLs:", max_urls)
+    print("[+] Total crawled URLs:", urls_visited)
