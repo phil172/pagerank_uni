@@ -4,6 +4,8 @@ from urllib.request import Request, urlopen
 import urllib, colorama
 from urllib.parse import urlparse, urljoin
 from urllib.error import HTTPError
+import json
+
 ###
 "https://www.thepythoncode.com/article/extract-all-website-links-python"
 ###
@@ -35,6 +37,7 @@ def is_valid(url):
 
 ### Get all links from Website
 def get_links(url):
+    ### IF URL IN SET -> CONTINUE (Seiten nicht doppelt herunterladen)
     urls = set()
     domain_name = urlparse(url).netloc
     html_page = urllib.request.urlopen(url)
@@ -83,7 +86,10 @@ def crawl(url, max_urls=30):
     global urls_visited
     urls_visited += 1
     print(f"{YELLOW}[*] Crawling: {url}{RESET}")
-    links = get_links(url)
+    links = get_links(url) ## Hinterlegen, auf welcher Seite gecrawlet wurde
+    ### DICT
+    ###["www.math.kit.edu" : {"https://www.math.kit.edu/#KITsecTermine", "link3", "linkx"}]
+    ###["https://www.math.kit.edu/#KITsecTermine" : {"link2", "link34", "linkx"}]
     for link in links:
         try:
             if urls_visited > max_urls:
