@@ -19,7 +19,6 @@ RESET = colorama.Fore.RESET
 YELLOW = colorama.Fore.YELLOW
 BLUE = colorama.Fore.BLUE
 
-### URL and SSL
 url = "https://www.math.kit.edu/"
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -29,7 +28,7 @@ external_urls = set()
 urls_pdf = set()
 urls_doc = set()
 img_doc = set()
-
+all_urls = dict()
 ### Validate URLs
 def is_valid(url):
     parsed = urlparse(url)
@@ -72,6 +71,7 @@ def get_links(url):
                 external_urls.add(href)
             continue
         print(f"{GREEN}[*] Internal link: {href}{RESET}")
+        all_urls[url] = internal_urls
         urls.add(href)
         internal_urls.add(href)
     return urls
@@ -98,14 +98,18 @@ def crawl(url, max_urls=30):
         except HTTPError as e:
             print(e)
             continue
-
+def to_json(dict, file):
+    with open(file, "w") as outfile:
+        json.dump(dict, outfile)
 
 if __name__ == "__main__":
-    crawl(url, max_urls=40)
-    print(internal_urls)
-    print("[+] Total Internal links:", len(internal_urls))
-    print("[+] Total PDF links:", len(urls_pdf))
-    print("[+] Total DOC links:", len(urls_doc))
-    print("[+] Total External links:", len(external_urls))
-    print("[+] Total URLs:", len(external_urls) + len(internal_urls))
-    print("[+] Total crawled URLs:", urls_visited)
+    crawl(url, max_urls=10)
+    print(all_urls)
+    #to_json(all_urls, "task/sample.json")
+    # print(internal_urls)
+    # print("[+] Total Internal links:", len(internal_urls))
+    # print("[+] Total PDF links:", len(urls_pdf))
+    # print("[+] Total DOC links:", len(urls_doc))
+    # print("[+] Total External links:", len(external_urls))
+    # print("[+] Total URLs:", len(external_urls) + len(internal_urls))
+    # print("[+] Total crawled URLs:", urls_visited)

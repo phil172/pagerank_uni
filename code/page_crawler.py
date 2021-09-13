@@ -1,6 +1,3 @@
-### PageRanke Algorithm ###
-## https://towardsdatascience.com/pagerank-3c568a7d2332 ##
-
 from __future__ import division
 from io import StringIO
 from bs4 import BeautifulSoup
@@ -20,12 +17,20 @@ import codecs
 import copy
 import re
 
-__version__ = "0.1"
+###
+"https://www.thepythoncode.com/article/extract-all-website-links-python"
+###
 
-STOPWORDS = ["und", "ist"]
+### STOPWORDS (Words that aren't specific enough)
+STOPWORDS = set(['and', 'is', 'it', 'an', 'as', 'at', 'have', 'in', 'its', 'are', 
+	'said', 'from', 'for', 'to', 'been', 'than', 'also', 'other', 'which', 'new', 
+	'has', 'was', 'more', 'be', 'we', 'that', 'of', 'but', 'they', 'not', 'with', 
+	'by', 'a', 'on', 'this', 'could', 'their', 'these', 'can', 'the', 'or', 'first'])
+
 DEBUG_FLG = True
-AGENT = AGENT = "%s/%s" % (__name__, __version__)
-ssl._create_default_https_context = ssl._create_unverified_context
+VERBOSE_FLG = False
+alpha = 0.15
+CONVERGE_ERROR = 0.00001
 
 # init the colorama module
 colorama.init()
@@ -45,33 +50,37 @@ class Uid():
     def getNext(self):
         idToReturn = self.nextid
         self.nextid += 1
-        return idToReturn
 
     ### Get largest (last) ID
     def getLargest(self):
         return self.nextid
 
+### URL and SSL
 class Page():
-    def __init__(self, uid, url, nr_links="", title=""):
+    def __init__(self, uid, url, title=""):
         # Unique ID
         self.uid = uid
+
         # url
         self.url = url
+
         # title
         self.title = title
-        # number of links
-        self.nr_links = ""
+
         # page content
         self.content = ""
+
         # pages this links to
-        self.linkUrls = set([])
+        self.linkURls = set([])
+
         # (url, anchor) pairs this links to
         self.links = []
+
         # PageRank of this page
         self.pageRank = 0.0
+
         # Terms of anchors pointing to this page
         self.incomingTerms = []
-
 
     ### Get Item
 
@@ -85,13 +94,9 @@ class Page():
             self.linkUrls.add(url)
     ### ?????
     def addIncomingTerms(self, termList):
-
         termList = map(lambda x: x.lower(), termList)
-        print("first ")
         termList = filter(lambda x: (x not in STOPWORDS), termList)
-        print("second")
         self.incomingTerms.extend(termList)
-        print("extend")
 
     def isDeadend(self):
         if len(self.links) == 0:
@@ -106,139 +111,154 @@ class Page():
             return '<No Title>'
         else:
             return self.title
-    # def getIndexRecord(self):
-    #     return PageIndexRecord(self.title, self.incomingTerms)
+    def getIndexRecord(self):
+        return PageIndexRecord(self.title, self.incomingTerms)
 
     def savePage(self):
         filename = "pages/" + str(self.uid) + '.html'
-        clean_content = str(self.content)
-        clean_content = clean_content.replace('\n', '')
         with open(filename, 'w') as f:
-            f.write(clean_content)
+            f.write(self.content)
             if DEBUG_FLG:
                 print('page', self.uid, 'saved as', filename)
 
-class WebCrawler():
-    def __init__(self, seeldUrls = []):
+
+class Crawler:
+    def __init__(self, seedUrls=[]):
         self.pages = {}
-        self.urls = set()
+        self.urls = set(seedUrls)
         self.spooler = Uid()
 
-    def is_valid(url):
+    def validateUrl(self, url):
+        return url in self.urls
+
+    ### excluding docs, pdfs, img and external urls
+    def standardLink(self, href):
+        test = href
+        if test[:26] != "https://www.math.kit.edu/":
+            return False
+        elif string.find(href, "pdf") > -1:
+            return False
+        elif string.find(href, "doc") > -1:
+            return False
+        elif string.find(href, "img") > -1:
+            return False
+        else:
+         return True
+
+    ### clean an url:
+    def sanitizeUrl(self, url):
+        url = str(url)
+        if url[-10:] == "index.html":
+            return url[:-10]
+
+        hashIndex = string.find(url, "#")
+        if hashIndex > -1:
+            realUrl = url[0:hashIndex]
+            return realUrl
+        return url
+
+    def is_valid(self, url):
         parsed = urlparse(url)
         return bool(parsed.netloc) and bool(parsed.scheme)
 
-
-    def right_link(self, href):
-        url = href
-        if url[:25] != "https://www.math.kit.edu/":
+    def right_link(self):
+        if "pdf" in str(self):
+            print(f"{BLUE}[!] PDF link: {self}{BLUE}")
             return False
-        if "pdf" in str(url):
+        if "doc" in str(self):
+            print(f"{BLUE}[!] DOC link: {self}{BLUE}")
             return False
-        if "doc" in str(url):
-            return False
-        if "jpg" in str(url) or ".png" in str(url):
-
+        if ".jpg" in str(self) or ".png" in str(self):
+            print(f"{BLUE}[!] IMG link: {self}{BLUE}")
             return False
         else:
             return True
 
-    def openRequest(self, url):
+    def requestPage(self, url):
         try:
-            request = urllib.request.Request(url)
+            request = urllib.request.urlopen(url)
             handle = urllib.request.build_opener()
         except IOError:
             return None
-        return request, handle
-
-    def addHeaders(self, request):
-        request.add_header("User-Agent", AGENT)
+        print("HANDLE", handle)
+        return (request, handle)
 
     def fetchPage(self, url):
         if url in self.pages:
             return self.pages[url]
         uid = self.spooler.getNext()
         toReturn = Page(uid, url)
-        request, handle = self.openRequest(url)
+        request, handle = self.requestPage(url)
         self.addHeaders(request)
         if handle:
             try:
                 toReturn.content = handle.open(request).read()
-                soup = BeautifulSoup(toReturn.content, features="lxml")
-                toReturn.title = str(soup.html.head.title)
-                links = soup('a')   
-                if DEBUG_FLG:
-                    print("page has ", len(links), " links.")    
+                soup = BeautifulSoup(toReturn.content)
+                toReturn.title = soup.html.head.title.string
+                links = soup("a")
+                print("Page has ", len(links), " links!")
             except HTTPError as e:
                 print(e)
 
-        ### process links
+
+        ## processing links
             for link in links:
+                if not link.right_link():
+                    print("notright link")
+                    continue
                 if not link:
                     continue
-                href = link.attrs.get("href")
-                anchor = str(link)
+                href = link.get("href")
+                anchor = link.string
                 if not anchor:
                     anchor = " "
                 if not href:
                     continue
-                ###Check if pdf, dod, img or external link
-                fullHref = str(urljoin(url, href)) #escape(href)
-                fullHref = fullHref.replace('\n', '')
-                if self.right_link(fullHref):# and fullHref in self.urls:
+
+                href = self.sanitizeUrl(href)
+                fullHref = str(urlparse.urljoin(url, href))
+                fullHref = string.replace(fullHref, '\n', '')
+                if self.standardLink(fullHref) and fullHref in self.urls:
                     toReturn.addLink(fullHref, anchor)
-                    #print(anchor, "----->", fullHref)
+                    if DEBUG_FLG and VERBOSE_FLG:
+                        print("---> linked to ", fullHref)
             return toReturn
 
-
+        ### save pages
     def savePages(self):
-        for page in self.pages.values():
+        for page in self.pages.itervalues():
             page.savePage()
 
     def crawl(self, urllist=None):
         if urllist:
             self.urls = set(urllist)
-        else:
-            print("NOT URLLIST")
+        print(self.urls)
         for url in self.urls:
             self.pages[url] = self.fetchPage(url)
             if DEBUG_FLG:
-                print('Successfully fetched', url)
+                print("successfully fetched ", url)
             self.pages[url].savePage()
-        print("''''''''''###########''''''''''''''")
-        print(self.pages[url].linkUrls)
-        print(type(self.pages[url].linkUrls))
-        print(len(self.pages[url].linkUrls))
-        print("''''''''''###########''''''''''''''")
         if DEBUG_FLG:
-            print("*****************")
-            print("Finished Fetching!")
-        print(self.pages.items())
-        print(type(self.pages))   
+            print("************")
+            print("finished fetching!")
+
         for url, page in self.pages.items():
             for (href, anchor) in page.links:
                 if href and anchor:
                     terms = anchor.lower().split()
-                    print("terms")
-                    print(type(self.pages[href]))
                     self.pages[href].addIncomingTerms(terms)
-                    print("addincomingtermns")
 
 class PageIndexRecord:
-    def __init__(self, title, anchors=None):
-        self.title = title
-        self.anchors = anchors
+    pass
 
-    def addAnchor(self, anchorString):
-        self.anchors.append(anchorString)
+def openUrlFile(filename="url.txt"):
+    if DEBUG_FLG:
+        print('opening', filename)
+    urls = []
+    with open(filename, 'r') as f:
+        for line in f:
+            urls.append(str.replace(line, '\n', ''))
+        return urls
 
-    def setTitle(self, title):
-        self.title = title
-
-
-def Run():
-    lst = ["https://www.math.kit.edu/"]
-    crawler = WebCrawler()
-    crawler.crawl(lst)
-
-Run()
+crawler = Crawler(openUrlFile())
+crawler.crawl()
