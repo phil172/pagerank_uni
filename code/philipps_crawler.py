@@ -75,6 +75,9 @@ class Crawler:
 
     def is_valid(self, url):
         pass
+
+    def get_id(self):
+        return self.spooler.getNext()
     
     def replace(self):
         str(self).replace()
@@ -84,8 +87,8 @@ class Crawler:
         urls = set()
         title = ""
         no_links = ""
-        id = self.spooler.getNext()
-        print(id)
+        id = self.get_id()
+        #print(id)
         domain_name = urlparse(url).netloc
         html_page = urllib.request.urlopen(url)
         soup = BeautifulSoup(html_page, "lxml")
@@ -131,4 +134,46 @@ def Run():
         page = cr.get_page()
         print(page.url)
         print(page.id)
-Run()
+
+cr = Crawler(url)
+print(cr)
+print("1", cr.url)
+page = cr.get_page()
+print("1 page.url: ", page.url)
+dr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
+print("2", dr.url)
+page2 = dr.get_page()
+print("2 page.url: ", page2.url)
+cr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
+print("2 ", cr.url)
+page3 = cr.get_page()
+print("3 page.url: ", page3.url)
+
+
+
+
+
+
+# new_dict = dict()
+# new_dict[page.url]=list(page.link_urls)
+# for i in range(0, 5):#page.no_links):
+#     next_url = new_dict[page.url][i]
+#     dr = Crawler(next_url)
+#     print(next_url)
+#     page = dr.get_page()
+#     print(page.url)
+#     new_dict[page.url] = list(page.link_urls)
+
+#print(new_dict)
+# spoler = IdSpooler()
+# lst = []
+# for i in range(0,4):
+#     i +=1
+#     page = cr.get_page()
+#     print(page.url)
+#     lst.append(page)
+# print(lst[0].url)
+# print(lst[1].url)
+# print(lst[2].url)
+# print(lst[3].url)
+
