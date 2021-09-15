@@ -5,6 +5,7 @@ from urllib.request import Request, urlopen
 import urllib, colorama
 from urllib.parse import urlparse, urljoin
 from urllib.error import HTTPError
+import json
 
 colorama.init()
 GREEN = colorama.Fore.GREEN
@@ -139,15 +140,24 @@ cr = Crawler(url)
 print(cr)
 print("1", cr.url)
 page = cr.get_page()
-print("1 page.url: ", page.url)
-dr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
-print("2", dr.url)
-page2 = dr.get_page()
-print("2 page.url: ", page2.url)
-cr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
-print("2 ", cr.url)
-page3 = cr.get_page()
-print("3 page.url: ", page3.url)
+new_dict = dict()
+new_dict[page.url]=list(page.link_urls)
+for i in range(0, 3):
+#for link in page.link_urls:
+
+    cr = Crawler(new_dict[page.url][i])
+    new_url = cr.url
+    page = Crawler(new_url).get_page()
+    print(new_url)
+    new_dict[new_url] = list(page.link_urls)
+
+
+# print("1 page.url: ", page.url)
+# dr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
+# print("2", dr.url)
+# url = dr.url
+# page = Crawler(url).get_page()
+# print("2 page.url: ", page.url)
 
 
 
