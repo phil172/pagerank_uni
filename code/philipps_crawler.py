@@ -6,6 +6,12 @@ import urllib, colorama
 from urllib.parse import urlparse, urljoin
 from urllib.error import HTTPError
 import json
+import itertools
+
+# class resource_cl():
+#     newid = itertools.count().next
+#     def __init__(self):
+#         self.id = resource_cl.newid()
 
 colorama.init()
 GREEN = colorama.Fore.GREEN
@@ -43,8 +49,9 @@ class Page:
     '''
     Constructor
     '''
+    id_counter = itertools.count(start=1)
     def __init__(self, id, url, title, no_links, content, link_urls):
-        self.id = id
+        self.id = next(Page.id_counter)
         self.url = url
         self.title = title
         self.no_links = no_links
@@ -79,16 +86,17 @@ class Crawler:
 
     def get_id(self):
         return self.spooler.getNext()
-    
+     
     def replace(self):
         str(self).replace()
     
     def get_page(self):
         ### IF URL IN SET -> CONTINUE (Seiten nicht doppelt herunterladen)
+        url = self.url
         urls = set()
         title = ""
         no_links = ""
-        id = self.get_id()
+
         #print(id)
         domain_name = urlparse(url).netloc
         html_page = urllib.request.urlopen(url)
@@ -116,74 +124,46 @@ class Crawler:
             if domain_name not in href:
                 # external link
                 continue
-            #print(f"{GREEN}[*] Internal link: {href}{RESET}")
             urls.add(href)
         no_links = len(urls)
         title = soup.title.string
         toReturn = Page(id, url, title,  no_links, content, urls)
         return toReturn
 
-def Run():
+
+def save_json(new_dict, filename):
+    with open(filename, 'w') as fp:
+        json.dump(new_dict, fp)
+def add_if_key_not_exist(dict_obj, key, value):
+    if key not in dict_obj:
+        dict_obj.update({key: value})
+    
+def crawl(url):
     cr = Crawler(url)
-    print(cr.url)
     page = cr.get_page()
-    links = page.link_urls
-    print(links)
-    for link in links:
+    print(f"{RED}[*] Crawling: {page.url}[*][*][*][*]{RESET}")
+    print(f"{BLUE}CR: {cr.url} \nPAGE URL: {page.url} \nID:  {page.id}{RESET}")
+    new_dict = dict()
+    id_dict = dict()
+    new_dict[page.url] = list(page.link_urls)
+    id_dict[page.id] = [page.url]
+    for link in page.link_urls:
         cr = Crawler(link)
-        print(cr.url)
         page = cr.get_page()
-        print(page.url)
-        print(page.id)
+        #new_dict[page.url] = list(page.link_urls)
+        add_if_key_not_exist(id_dict, page.id, page.url)
+        add_if_key_not_exist(new_dict, page.id, page.link_urls)
+        print(f"{YELLOW}[*][*][*][*]-- Crawling: {page.url} --[*][*][*][*]{RESET}")
+        lenght = len(page.link_urls)
+        print(f"{BLUE}Url: {page.url} \nPage_ID:  {page.id} \nNumberOfLinks: {lenght}{RESET}")
+    save_json(id_dict, "IDs.json")
+    save_json(new_dict, "ID_LINKS.json")
+    print(f"{GREEN}Webscarping Done!")
 
-cr = Crawler(url)
-print(cr)
-print("1", cr.url)
-page = cr.get_page()
-new_dict = dict()
-new_dict[page.url]=list(page.link_urls)
-for i in range(0, 3):
-#for link in page.link_urls:
-
-    cr = Crawler(new_dict[page.url][i])
-    new_url = cr.url
-    page = Crawler(new_url).get_page()
-    print(new_url)
-    new_dict[new_url] = list(page.link_urls)
-
-
-# print("1 page.url: ", page.url)
-# dr = Crawler("https://www.math.kit.edu/vvz/seite/vvzzukunft/de")
-# print("2", dr.url)
-# url = dr.url
-# page = Crawler(url).get_page()
-# print("2 page.url: ", page.url)
+    
 
 
 
 
 
-
-# new_dict = dict()
-# new_dict[page.url]=list(page.link_urls)
-# for i in range(0, 5):#page.no_links):
-#     next_url = new_dict[page.url][i]
-#     dr = Crawler(next_url)
-#     print(next_url)
-#     page = dr.get_page()
-#     print(page.url)
-#     new_dict[page.url] = list(page.link_urls)
-
-#print(new_dict)
-# spoler = IdSpooler()
-# lst = []
-# for i in range(0,4):
-#     i +=1
-#     page = cr.get_page()
-#     print(page.url)
-#     lst.append(page)
-# print(lst[0].url)
-# print(lst[1].url)
-# print(lst[2].url)
-# print(lst[3].url)
-
+crawl(url)
