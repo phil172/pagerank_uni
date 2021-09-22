@@ -21,8 +21,10 @@ YELLOW = colorama.Fore.YELLOW
 BLUE = colorama.Fore.BLUE
 RED = colorama.Fore.RED
 
-url = "https://www.math.kit.edu/"
+base_url = "https://www.math.kit.edu/"
 ssl._create_default_https_context = ssl._create_unverified_context
+
+urls_visited = []
 ### Class to save Page objects
 class IdSpooler:
     '''
@@ -80,6 +82,8 @@ class Crawler:
     def __init__(self, url):
         self.url = url
         self.spooler = IdSpooler()
+        self.visited_url = {}
+        self.queue = [url]
 
     def is_valid(self, url):
         pass
@@ -129,6 +133,16 @@ class Crawler:
         toReturn = Page(id, url, title,  no_links, content, urls)
         return toReturn
 
+    def crawler(self, url):
+        cr = Crawler(self.queue[0])
+        page = cr.get_page()
+        if self.queue[0] not in urls_visited:
+            new_dict[self.queue[0]] = [page.link_urls]
+            urls_visited.append(self.queue[0])
+            print(page.url)
+            self.queue = page.link_urls[1:]
+            self.crawler(self.queue[0])
+
 
 def save_json(new_dict, filename):
     with open(filename, 'w') as fp:
@@ -137,23 +151,6 @@ def add_if_key_not_exist(dict_obj, key, value):
     if key not in dict_obj:
         dict_obj.update({key: value})
 
-def rec(obj, page, new_dict, id_dict, maxiterations=3):
-    obj.append(page)
-    it = 0
-    while it < maxiterations:
-        for link in page.link_urls:
-            cr = Crawler(link)
-            page = cr.get_page()
-            ## recursive(link, maxiterations=x)
-            #new_dict[page.url] = list(page.link_urls)
-            add_if_key_not_exist(id_dict, page.id, page.url)
-            add_if_key_not_exist(new_dict, page.id, page.link_urls)
-            print(f"{YELLOW}[*][*][*][*]-- Crawling: {page.url} --[*][*][*][*]{RESET}")
-            lenght = len(page.link_urls)
-            print(f"{BLUE}Url: {page.url} \nPage_ID:  {page.id} \nNumberOfLinks: {lenght}{RESET}")
-        cr = Crawler(page.url)
-        page = cr.get_page()
-        it += 1
 
 
 def crawl(url):
@@ -165,13 +162,10 @@ def crawl(url):
     id_dict = dict()
     new_dict[page.url] = list(page.link_urls)
     id_dict[page.id] = [page.url]
-    rec(page, new_dict, id_dict, maxiterations=3)
     
     for link in page.link_urls:
         cr = Crawler(link)
         page = cr.get_page()
-        ## recursive(link, maxiterations=x)
-        #new_dict[page.url] = list(page.link_urls)
         add_if_key_not_exist(id_dict, page.id, page.url)
         add_if_key_not_exist(new_dict, page.id, page.link_urls)
         print(f"{YELLOW}[*][*][*][*]-- Crawling: {page.url} --[*][*][*][*]{RESET}")
@@ -190,60 +184,14 @@ def rec_objs(objs):
         objs.append(page) 
     return objs       
 
-urls_visited = 0
 new_dict = dict()
 id_dict = dict()
-it = 0
-visited_urls = []
 
-def new_crawl(base_url, maxiterations=3):
-    global it
+def return_all_links(base_url):
     cr = Crawler(base_url)
     page = cr.get_page()
-    print(f"{RED}[*] Crawling: {page.url}[*][*][*][*]{RESET}")
-    print(f"{BLUE}CR: {cr.url} \nPAGE URL: {page.url} \nID:  {page.id}{RESET}")
-    print(type(page.link_urls))
-    new_dict[page.url] = list(page.link_urls)
-    id_dict[page.id] = [page.url]
-    iterator = iter(page.link_urls)
-    for link in page.link_urls:
-        if page.url in visited_urls:
-            continue
-        while it < maxiterations:
-            print(link)
-            new_crawl(link, maxiterations=3)
-    print(visited_urls)
-    it += 1
-visited = []
-i = 0
-def crawler(url, depth):
-    global i
-    visited.append(url)
-    if depth == 0:
-        return None
-    cr = Crawler(url)
-    page = cr.get_page()
-    links = page.link_urls
-    print("Level ", depth, url)
-    print(f"{BLUE}PAGE URL: {page.url} \nNumber of Links:  {page.no_links}{RESET}")
-    for link in links:
-        if i > 50:
-            break
-        try:
-            if link in visited:
-                print(link, " alredy visited")
-                continue
-            new_dict[page.url] = list(page.link_urls)
-            id_dict[page.id] = [page.url]
-            visited.append(link)
-            print("i: ",i)
-            i += 1
-            crawler(link, depth)
-        except HTTPError as e:
-            continue
-        except InvalidURL:
-            continue 
-    depth -=1
-    print(visited)
+    return page.link_urls
 
-crawler(url, 3)
+cr = Crawler(base_url)
+cr.crawler(base_url)
+print(urls_visited)
