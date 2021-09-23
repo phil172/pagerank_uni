@@ -35,26 +35,26 @@ def is_valid(url):
     return bool(parsed.netloc) and bool(parsed.scheme)
 
 ### Get all links from Website
-def get_links(url):
+def get_links(url: str):
     ### IF URL IN SET -> CONTINUE (Seiten nicht doppelt herunterladen)
     urls = set()
     domain_name = urlparse(url).netloc
+    url.replace("#", "")
+    url.replace(" ", "")
     html_page = urllib.request.urlopen(url)
     soup = BeautifulSoup(html_page, "lxml")
     for a_tag in soup.findAll('a'):
         href = a_tag.attrs.get("href")
         ### Check if pdf link
         if "pdf" in str(href):
-            print(f"{BLUE}[!] PDF link: {href}{BLUE}")
-            urls_pdf.add(href)
+            continue
+        if "zip" in str(href):
+            continue
+        if "xlsx" in str(href):
             continue
         if "doc" in str(href):
-            print(f"{BLUE}[!] DOC link: {href}{BLUE}")
-            urls_doc.add(href)
             continue
         if ".jpg" in str(href) or ".png" in str(href):
-            print(f"{BLUE}[!] IMG link: {href}{BLUE}")
-            urls_doc.add(href)
             continue
         if href == "" or href is None:
             continue
@@ -66,11 +66,11 @@ def get_links(url):
             continue
         if domain_name not in href:
             # external link
-            if href not in external_urls:
-                print(f"{GRAY}[!] External link: {href}{RESET}")
-                external_urls.add(href)
+            # if href not in external_urls:
+            #     print(f"{GRAY}[!] External link: {href}{RESET}")
+            #     external_urls.add(href)
             continue
-        print(f"{GREEN}[*] Internal link: {href}{RESET}")
+        #print(f"{GREEN}[*] Internal link: {href}{RESET}")
         all_urls[url] = internal_urls
         urls.add(href)
         internal_urls.add(href)
@@ -82,34 +82,39 @@ def get_html_every_url(urls):
         soup = BeautifulSoup(html_page, "lxml")       
 
 urls_visited = 0
+urls_visited_set = set()
+url_pairs = dict()
+
 def crawl(url, max_urls=30):
-    global urls_visited
+    global urls_visited, urls_visited_set
     urls_visited += 1
+    print("URLS VISITED", urls_visited)
     print(f"{YELLOW}[*] Crawling: {url}{RESET}")
-    links = get_links(url) ## Hinterlegen, auf welcher Seite gecrawlet wurde
-    ### DICT
-    ###["www.math.kit.edu" : {"https://www.math.kit.edu/#KITsecTermine", "link3", "linkx"}]
-    ###["https://www.math.kit.edu/#KITsecTermine" : {"link2", "link34", "linkx"}]
+    links = get_links(url)
+    try:
+        url_pairs[url] = links
+    except TypeError as e:
+        print(e)
+        pass
     for link in links:
         try:
             if urls_visited > max_urls:
                 break
+            if link in list(url_pairs.keys()):
+                continue
             crawl(link, max_urls=max_urls)
         except HTTPError as e:
             print(e)
             continue
+
 def to_json(dict, file):
     with open(file, "w") as outfile:
         json.dump(dict, outfile)
 
 if __name__ == "__main__":
-    crawl(url, max_urls=10)
-    print(all_urls)
-    #to_json(all_urls, "task/sample.json")
-    # print(internal_urls)
-    # print("[+] Total Internal links:", len(internal_urls))
-    # print("[+] Total PDF links:", len(urls_pdf))
-    # print("[+] Total DOC links:", len(urls_doc))
-    # print("[+] Total External links:", len(external_urls))
-    # print("[+] Total URLs:", len(external_urls) + len(internal_urls))
-    # print("[+] Total crawled URLs:", urls_visited)
+    try:
+        crawl(url, max_urls=1000)
+    except Exception as e:
+        print(e)
+    print(len(list(url_pairs.keys())))
+    to_json(url_pairs, "url_pairs.json")
