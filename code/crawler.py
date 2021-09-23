@@ -5,7 +5,7 @@ import urllib, colorama
 from urllib.parse import urlparse, urljoin
 from urllib.error import HTTPError
 import json
-
+import itertools
 ###
 "https://www.thepythoncode.com/article/extract-all-website-links-python"
 ###
@@ -29,6 +29,16 @@ urls_pdf = set()
 urls_doc = set()
 img_doc = set()
 all_urls = dict()
+
+### id counter
+class ID_spooler():
+
+    id_iter = itertools.count()
+
+    def __init__(self):
+        self.id = next(self.id_iter)
+
+
 ### Validate URLs
 def is_valid(url):
     parsed = urlparse(url)
@@ -36,7 +46,6 @@ def is_valid(url):
 
 ### Get all links from Website
 def get_links(url: str):
-    ### IF URL IN SET -> CONTINUE (Seiten nicht doppelt herunterladen)
     urls = set()
     domain_name = urlparse(url).netloc
     url.replace("#", "")
@@ -74,34 +83,44 @@ def get_links(url: str):
         all_urls[url] = internal_urls
         urls.add(href)
         internal_urls.add(href)
-    return urls
+    return internal_urls
     
-def get_html_every_url(urls):
-    for url in urls:
-        html_page = urllib.request.urlopen(url)
-        soup = BeautifulSoup(html_page, "lxml")       
+def get_html_every_url(url, id):
+#    for url in urls:
+    html_page = urllib.request.urlopen(url)
+    soup = BeautifulSoup(html_page, "lxml")
+    with open(str('pages/'+ str(id)+'.html'), 'w', encoding='utf-8') as f_out:
+        f_out.write(soup.prettify())
+   
 
 urls_visited = 0
 urls_visited_set = set()
 url_pairs = dict()
 
-def crawl(url, max_urls=30):
-    global urls_visited, urls_visited_set
+
+def crawl(url, max_urls=30, urls_visited_set=set()):
+    global urls_visited
     urls_visited += 1
-    print("URLS VISITED", urls_visited)
+    id_ = ID_spooler()
+    print(id_.id)
     print(f"{YELLOW}[*] Crawling: {url}{RESET}")
-    links = get_links(url)
+    get_html_every_url(url, id_.id)
+    links = list(get_links(url))
     try:
-        url_pairs[url] = links
+        url_pairs[url] = list(links)
     except TypeError as e:
         print(e)
         pass
     for link in links:
         try:
             if urls_visited > max_urls:
+                print("max visited urls")
                 break
-            if link in list(url_pairs.keys()):
+            if link in urls_visited_set:
+                print("link already visited")
                 continue
+            urls_visited_set.add(link)
+            print("saved url: ", link)
             crawl(link, max_urls=max_urls)
         except HTTPError as e:
             print(e)
@@ -113,8 +132,7 @@ def to_json(dict, file):
 
 if __name__ == "__main__":
     try:
-        crawl(url, max_urls=1000)
+        crawl(url, max_urls=3)
     except Exception as e:
         print(e)
-    print(len(list(url_pairs.keys())))
     to_json(url_pairs, "url_pairs.json")
