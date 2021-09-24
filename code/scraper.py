@@ -9,7 +9,7 @@ import itertools
 import requests
 from urllib.request import urlparse
 from urllib.request import urljoin
-
+"https://www.geeksforgeeks.org/web-crawling-using-breadth-first-search-at-a-specified-depth/"
 '''COlORAMA MODULE'''
 
 # init the colorama module
@@ -54,6 +54,7 @@ def level_crawler(input_url):
     for a_tag in soup.findAll('a'):
         href = a_tag.attrs.get("href")
         if(href != "" and href != None):
+            href = href.replace(" ", "")
             if current_url_domain not in href:
                 continue
             if any(ext in href for ext in documents):
@@ -64,6 +65,7 @@ def level_crawler(input_url):
             href_parsed = urlparse(href)
             href = href_parsed.scheme
             href += "://"
+            href = href.replace(" ", "")
             href += href_parsed.netloc
             href += href_parsed.path
             final_parsed_href = urlparse(href)
@@ -102,17 +104,21 @@ def crawl(url_, depth, urls_to_visit=200):
             queue = []
             queue.append(url_)
             for j in range(depth):
-
+                print(f"DEPTH: {j}")
                 for count in range(len(queue)):
+                    id_ = ID_spooler()
+                    url = queue.pop(0)
+                    url.replace(" ", "")
+                    if url in urls_visited:
+                        print(f"{RED}{url} visited")
+                        continue
+                    print(f"{GREEN}Scraping... {url}{RESET}")
                     print(f"{RED}URLS VISITED: {len(urls_visited)}{RESET}")
-                    print(f"{YELLOW}URLS in QUEUE: {len(queue)}{RESET}")
                     if len(urls_visited) > urls_to_visit:
                         to_json(url_dict, "links_to_pages.json")
                         to_json(id_dict, "id_dict.json") 
                         return
-                    id_ = ID_spooler()
-                    url = queue.pop(0)
-                    print(f"{YELLOW}URLS in QUEUE after POP: {len(queue)}{RESET}")
+                    print(f"{YELLOW}URLS in QUEUE: {len(queue)}{RESET}")
                     urls_visited.add(url)
                     id_dict[url] = id_.id
                     urls = level_crawler(url)
@@ -126,4 +132,4 @@ def crawl(url_, depth, urls_to_visit=200):
         to_json(url_dict, "links_to_pages.json")
         to_json(id_dict, "id_dict.json")
 
-crawl(base_url, depth=3, urls_to_visit=2000)
+crawl(base_url, depth=3, urls_to_visit=5000)
