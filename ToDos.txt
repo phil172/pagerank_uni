@@ -1,6 +1,0 @@
-Philipp:
-Checken ob link bereits besucht, sonst ignorieren
-Links bzw. Knoten als Dict bzw. Json speichern
-
-Xander:
-Einlesen in Aufgabe b, Konzept entwickeln
