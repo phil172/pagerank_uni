@@ -19,6 +19,7 @@ GRAY = colorama.Fore.LIGHTBLACK_EX
 RESET = colorama.Fore.RESET
 YELLOW = colorama.Fore.YELLOW
 BLUE = colorama.Fore.BLUE
+RED = colorama.Fore.RED
 
 '''BASEURL AND SSL'''
 
@@ -33,7 +34,7 @@ id_dict = dict()
 
 class ID_spooler():
 
-    id_iter = itertools.count()
+    id_iter = itertools.count(start=1)
 
     def __init__(self):
         self.id = next(self.id_iter)
@@ -74,7 +75,7 @@ def level_crawler(input_url):
                     temp_urls.add(href)
         all_href.append(href)
     internal_urls.remove(input_url)    
-    url_dict[input_url] = all_href
+    url_dict[input_url] = list(set(all_href))
     return temp_urls
 
 
@@ -89,7 +90,7 @@ def to_json(dict, file):
     with open(file, "w") as outfile:
         json.dump(dict, outfile)
 
-def crawl(url_, depth):
+def crawl(url_, depth, urls_to_visit=200):
     try:
         if(depth == 0):
             print("Intern - {}".format(url_))
@@ -101,21 +102,28 @@ def crawl(url_, depth):
             queue = []
             queue.append(url_)
             for j in range(depth):
+
                 for count in range(len(queue)):
+                    print(f"{RED}URLS VISITED: {len(urls_visited)}{RESET}")
+                    print(f"{YELLOW}URLS in QUEUE: {len(queue)}{RESET}")
+                    if len(urls_visited) > urls_to_visit:
+                        to_json(url_dict, "links_to_pages.json")
+                        to_json(id_dict, "id_dict.json") 
+                        return
                     id_ = ID_spooler()
                     url = queue.pop(0)
+                    print(f"{YELLOW}URLS in QUEUE after POP: {len(queue)}{RESET}")
                     urls_visited.add(url)
                     id_dict[url] = id_.id
                     urls = level_crawler(url)
-                    save_html(url, id_.id)
+                    print(f"{BLUE}Url: {url} \nPage_ID:  {id_.id} \nNumberOfNewLinks: {len(urls)}{RESET}")
+                    print(f"{GREEN}Done.{RESET}")
+                    #save_html(url, id_.id)
                     for i in urls:
                         if i not in urls_visited:
                             queue.append(i)
-        print(url_dict)
-        to_json(url_dict, "links_to_pages.json")
-        to_json(id_dict, "id_dict.json") 
     except KeyboardInterrupt:
         to_json(url_dict, "links_to_pages.json")
-        to_json(id_dict, "id_dict.json") 
+        to_json(id_dict, "id_dict.json")
 
-crawl(base_url, 2)
+crawl(base_url, depth=3, urls_to_visit=2000)
