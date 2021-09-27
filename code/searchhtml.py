@@ -10,7 +10,7 @@ class HtmlImport():
     def __init__(self, path):
         self.path = path
         self.soup = self.get_soup()
-        self.text = self.get_text()
+        self.text = self.get_text_string()
         
 
     def get_soup(self):
@@ -18,11 +18,8 @@ class HtmlImport():
             soup = BeautifulSoup(html_file, features="html.parser")
             return soup
 
-    def get_text(self):
+    def get_text_string(self):
         soup = self.soup
-        for script in self.soup(["script", "style"]):
-            script.extract()    # rip it out
-        # get text
         for script in soup(["script", "style"]):
             script.extract()    # rip it out
         text = soup.get_text()
@@ -51,18 +48,39 @@ search_dict = dict()
 
 for page in all_pages:
     h = HtmlImport("pages/"+page)
-    text: str = h.get_text()
+    text: str = h.get_text_string()
     text = text.lower()
-    pos = re.finditer(searchterm, text)
+    results = [m for m in re.finditer(searchterm, text)]
     spans = []
-    for el in pos:
-        spans.append(el.span())
-        search_dict[page] = spans
+    if len(results) > 0:
+        for el in results:
+            spans.append(el.span())
+            search_dict[page] = spans
+        print(search_dict)
+    elif len(results) == 0:
+        print("nothing found")
+        terms = searchterm.split(" ")
+        for term in terms:
+            print(f"trying again for {term}")
+            results = [m for m in re.finditer(term, text)]
+            if len(results) == 0:
+                print("not all terms found...")
+                break
+            print(f"{term} found")
+            # spans = []
+            # for el in results:
+            #     spans.append(el.span())
+
+    #                 search_dict[page] = spans
+    #         except StopIteration as e:dd
+    #             print(f"{term} not in {page}")
+
+### FALLS NICHTS GEFUNDEN
+### 1x Suche für "Fakultät"
+### 1x Suche für "für"
+### 1x Suche für "Mathematik"
+
 
 to_json(search_dict, "searchdict.json")
-print(search_dict["9.html"])
-
-neun = HtmlImport("pages/9.html")
-text = neun.get_text()
-
-print(text[0:80])
+# print(search_dict["9.html"])
+# print(text[0:80])
