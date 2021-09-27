@@ -1,0 +1,5 @@
+Ablauf:
+
+import von Testgraphen bzw. Graphen in Xanders Funktion
+
+Suchwort in String suchen in string 
