@@ -19,8 +19,9 @@ class Graph():
             data = json.load(json_file)
         return data
 
-# with open('id_dict.json') as json_file:
-#     id_dict = json.load(json_file)
+    def to_json(self, file):
+        with open(file, "w") as outfile:
+            json.dump(self.graph, outfile)
 
     def get_graphs(self):
         ids: dict = self.ids
@@ -36,7 +37,6 @@ class Graph():
         return self.graph
 
 
-
     def test(self):
         ids: dict = self.ids
         data: dict = self.data
@@ -44,10 +44,8 @@ class Graph():
         lst = list(data[list(data.keys())[0]])
 
 gr = Graph(idpath, datapath)
-#gr.test()
-# gr.get_graph()
 graph = gr.get_graphs()
-print(graph)
+gr.to_json("id_gaph.json")
 
 
 

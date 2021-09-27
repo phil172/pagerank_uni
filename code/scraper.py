@@ -30,6 +30,7 @@ internal_urls = set()
 urls_visited = set()
 url_dict = dict()
 id_dict = dict()
+
 '''ID CLASS'''
 
 class ID_spooler():
@@ -81,7 +82,6 @@ def level_crawler(input_url):
     return temp_urls
 
 
-
 def save_html(url, id):
     html_page = urllib.request.urlopen(url)
     soup = BeautifulSoup(html_page, "lxml")
@@ -124,7 +124,7 @@ def crawl(url_, depth, urls_to_visit=200):
                     urls = level_crawler(url)
                     print(f"{BLUE}Url: {url} \nPage_ID:  {id_.id} \nNumberOfNewLinks: {len(urls)}{RESET}")
                     print(f"{GREEN}Done.{RESET}")
-                    #save_html(url, id_.id)
+                    save_html(url, id_.id)
                     for i in urls:
                         if i not in urls_visited:
                             queue.append(i)
@@ -132,4 +132,6 @@ def crawl(url_, depth, urls_to_visit=200):
         to_json(url_dict, "links_to_pages.json")
         to_json(id_dict, "id_dict.json")
 
-crawl(base_url, depth=3, urls_to_visit=5000)
+'''SCRAPE'''
+
+crawl(base_url, depth=2, urls_to_visit=20)
