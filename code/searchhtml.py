@@ -35,52 +35,54 @@ class HtmlImport():
 def to_json(dct, file):
     with open(file, "w") as outfile:
         json.dump(dct, outfile)
-    
-all_pages = os.listdir("pages") ## LISTE zb [9.html, 8.html, ...]
-
-### import pagerank json
-### {1: 1.2, 2: 1.4, ...}
 
 
-searchterm = input("Search something...")
-searchterm = searchterm.lower()
-search_dict = dict()
+if __name__ == "__main__":
+    all_pages = os.listdir("pages") ## LISTE zb [9.html, 8.html, ...]
 
-for page in all_pages:
-    h = HtmlImport("pages/"+page)
-    text: str = h.get_text_string()
-    text = text.lower()
-    results = [m for m in re.finditer(searchterm, text)]
-    spans = []
-    if len(results) > 0:
-        for el in results:
-            spans.append(el.span())
-            search_dict[page] = spans
-        print(search_dict)
-    elif len(results) == 0:
-        print("nothing found")
-        terms = searchterm.split(" ")
-        for term in terms:
-            print(f"trying again for {term}")
-            results = [m for m in re.finditer(term, text)]
-            if len(results) == 0:
-                print("not all terms found...")
-                break
-            print(f"{term} found")
-            # spans = []
-            # for el in results:
-            #     spans.append(el.span())
-
-    #                 search_dict[page] = spans
-    #         except StopIteration as e:dd
-    #             print(f"{term} not in {page}")
-
-### FALLS NICHTS GEFUNDEN
-### 1x Suche für "Fakultät"
-### 1x Suche für "für"
-### 1x Suche für "Mathematik"
+    ### import pagerank json
+    ### {1: 1.2, 2: 1.4, ...}
 
 
-to_json(search_dict, "searchdict.json")
-# print(search_dict["9.html"])
-# print(text[0:80])
+    searchterm = input("Search something...")
+    searchterm = searchterm.lower()
+    search_dict = dict()
+
+    for page in all_pages:
+        h = HtmlImport("pages/"+page)
+        text: str = h.get_text_string()
+        text = text.lower()
+        results = [m for m in re.finditer(searchterm, text)]
+        spans = []
+        if len(results) > 0:
+            for el in results:
+                spans.append(el.span())
+                search_dict[page] = spans
+            print(search_dict)
+        elif len(results) == 0:
+            print("nothing found")
+            terms = searchterm.split(" ")
+            for term in terms:
+                print(f"trying again for {term}")
+                results = [m for m in re.finditer(term, text)]
+                if len(results) == 0:
+                    print("not all terms found...")
+                    break
+                print(f"{term} found")
+                # spans = []
+                # for el in results:
+                #     spans.append(el.span())
+
+        #                 search_dict[page] = spans
+        #         except StopIteration as e:dd
+        #             print(f"{term} not in {page}")
+
+    ### FALLS NICHTS GEFUNDEN
+    ### 1x Suche für "Fakultät"
+    ### 1x Suche für "für"
+    ### 1x Suche für "Mathematik"
+
+
+    to_json(search_dict, "searchdict.json")
+    # print(search_dict["9.html"])
+    # print(text[0:80])
