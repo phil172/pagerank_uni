@@ -39,7 +39,10 @@ def to_json(dct, file):
     with open(file, "w") as outfile:
         json.dump(dct, outfile)
     
-all_pages = os.listdir("pages")
+all_pages = os.listdir("pages") ## LISTE zb [9.html, 8.html, ...]
+
+### import pagerank json
+### {1: 1.2, 2: 1.4, ...}
 
 
 searchterm = input("Search something...")
@@ -57,3 +60,9 @@ for page in all_pages:
         search_dict[page] = spans
 
 to_json(search_dict, "searchdict.json")
+print(search_dict["9.html"])
+
+neun = HtmlImport("pages/9.html")
+text = neun.get_text()
+
+print(text[0:80])
