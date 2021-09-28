@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+
 idpath = 'id_dict.json'
 datapath = 'links_to_pages.json'
 
