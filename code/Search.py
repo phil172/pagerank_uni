@@ -146,17 +146,15 @@ class ShowResults():
         self.s = Search()
         if self.s.searchdict is None:
             print(f"{YELLOW}Nothing found... please try again!{RESET}")
-            return
+            self.reset()
         self.results = list(self.s.searchdict.keys())
         self.first_page: str = self.results[0]
         self.first_values = list(self.s.searchdict[self.first_page])
-        self.second_page = self.results[1]
-        self.second_values = list(self.s.searchdict[self.second_page])
         self.inv_id_dict = self.get_id_dict()
         self.res_html = [self.find_link(x) for x in self.results]
         self.iterator = iter(self.results)
-        return 1
-        #self.testing = self.test()
+        self.testing = self.test()
+
 
     def get_id_dict(self):
         with open('id_dict.json') as json_file:
@@ -177,8 +175,6 @@ class ShowResults():
         return link
         
     def print_out(self):
-        if self.__init__() is None:
-            return
         #Import the html file
         #url_it = iter(self.results)
         first = next(self.iterator)
@@ -238,24 +234,11 @@ class ShowResults():
                 return False
             except IndexError as e:
                 print("No more results on this page!")
-                continue
-            # if inp == "next":
-            #     h = HtmlImport("pages/"+self.second_page)         
-            #     text = h.text
-            #     found_string = self.first_values[0]
-            #     output: str = text[found_string[0]:found_string[1]+300]
-            #     output = output.replace("\n", " ")
-            #     link = self.find_link(self.second_page)
-            #     print(self.res_html)
-            #     print(f"{RED}{output} ...")
-            #     print("\n")
-            #     print("\n")
-            #     print(f"{BLUE}Link: {link}")
-            #     print("\n")
-            #     print("\n")   
-            # else:
-            #     print("Thank you")         
-
+                continue    
+    @classmethod
+    def reset(cls):
+        cls.instance = None        # First clear Foo.instance so that __init__ does not fail
+        cls.instance = ShowResults()
 if __name__ == "__main__":
     s = ShowResults()
     s.print_out()
