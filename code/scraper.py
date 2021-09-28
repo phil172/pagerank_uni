@@ -9,7 +9,8 @@ import itertools
 import requests
 from urllib.request import urlparse
 from urllib.request import urljoin
-"https://www.geeksforgeeks.org/web-crawling-using-breadth-first-search-at-a-specified-depth/"
+
+
 '''COlORAMA MODULE'''
 
 # init the colorama module
@@ -99,7 +100,6 @@ def crawl(url_, depth, urls_to_visit=200):
         
         elif(depth == 1):
             level_crawler(url_)
-        
         else:
             queue = []
             queue.append(url_)
@@ -128,10 +128,13 @@ def crawl(url_, depth, urls_to_visit=200):
                     for i in urls:
                         if i not in urls_visited:
                             queue.append(i)
+        to_json(url_dict, "links_to_pages.json")
+        to_json(id_dict, "id_dict.json")                
     except KeyboardInterrupt:
         to_json(url_dict, "links_to_pages.json")
         to_json(id_dict, "id_dict.json")
 
 '''SCRAPE'''
 
-crawl(base_url, depth=2, urls_to_visit=20)
+if __name__ == '__main__':
+    crawl(base_url, depth=3, urls_to_visit=200)
