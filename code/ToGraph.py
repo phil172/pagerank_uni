@@ -30,7 +30,7 @@ class Graph():
         for i in range(0, len(list(data.keys()))):
             lst = list(data[list(data.keys())[i]])
             new_lst = []
-            A = (pd.Series(lst)).map(ids) #convert the list to a pandas series temporarily before mapping
+            A = (pd.Series(lst)).map(ids)
             B = list(A.dropna())
             for el in B:
                 new_lst.append(int(el))

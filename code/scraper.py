@@ -1,19 +1,13 @@
+import ssl, json, itertools, urllib, colorama
 from bs4 import BeautifulSoup
-import ssl
 from urllib.request import Request, urlopen
-import urllib, colorama
 from urllib.parse import urlparse, urljoin
 from urllib.error import HTTPError
-import json
-import itertools
-import requests
-from urllib.request import urlparse
-from urllib.request import urljoin
-
+from urllib.request import urlparse, urljoin
+from ToGraph import Graph
 
 '''COlORAMA MODULE'''
 
-# init the colorama module
 colorama.init()
 GREEN = colorama.Fore.GREEN
 GRAY = colorama.Fore.LIGHTBLACK_EX
@@ -26,11 +20,16 @@ RED = colorama.Fore.RED
 
 base_url = "https://www.math.kit.edu/"
 ssl._create_default_https_context = ssl._create_unverified_context
-depth = 2
+
+
+
+'''Initinalize Dicts'''
 internal_urls = set()
 urls_visited = set()
 url_dict = dict()
 id_dict = dict()
+idpath = 'id_dict.json'
+datapath = 'links_to_pages.json'
 
 '''ID CLASS'''
 
@@ -138,3 +137,6 @@ def crawl(url_, depth, urls_to_visit=200):
 
 if __name__ == '__main__':
     crawl(base_url, depth=3, urls_to_visit=200)
+    gr = Graph(idpath, datapath)
+    graph = gr.get_graphs()
+    gr.to_json("id_graph.json")
