@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import ssl
 from urllib.request import urlopen
 import re, os, colorama, json, ssl
-import random
 
 ''' COLORAMA MODULE '''
 colorama.init()
@@ -26,7 +25,7 @@ class HtmlImport():
         
 
     def get_soup(self):
-        with open(self.path) as html_file:
+        with open(self.path+".html") as html_file:
             soup = BeautifulSoup(html_file, features="html.parser")
             return soup
 
@@ -52,24 +51,19 @@ class Save():
 ''' IMPORT PAGERANKING '''
 
 class PageRank():
+    def __init__(self, rankfile):
+        self._rankfile = rankfile
+        self.rank_dict: dict = self.get_dict()
+
+    def get_dict(self):
+        with open(self._rankfile, "r") as file:
+            dct = json.load(file)
+        return dct
+
+'''WELCOME SCREEN'''
+
+class Welcome():
     def __init__(self):
-        self.files = os.listdir("pages")
-        self.pagerank: list() = [random.uniform(0.8,1.5) for x in range(len(self.files))]
-        self.rank_dict: dict() = dict(zip(self.files, self.pagerank))
-        self.sorted_dict: dict() = self.sort_dict()
-
-    def sort_dict(self):
-        s_dict = dict(sorted(self.rank_dict.items(), key=lambda item: item[1], reverse=True))
-        return s_dict
-
-''' NAVIGATE TERMINAL '''
-
-
-class NavigateTerminal():
-    def __init__(self):
-        self.welcome = self.welcome()
-        self.searchterm = self.check_searchterm()
-    def welcome(self):
         print(f"{GREEN}\n")
         print("\n")
         print("\n")
@@ -82,9 +76,15 @@ class NavigateTerminal():
         print("\n")
         print("\n")
 
+''' NAVIGATE TERMINAL '''
+
+class NavigateTerminal():
+    def __init__(self):
+        self.searchterm = self.check_searchterm()
+
     def check_searchterm(self):
         while True:
-            input_str = input(f"{GREEN}Please enter your search term...\n")
+            input_str = input(f"{GREEN}Please enter your search term...\n\n\n")
             print("\n")
             print("\n")
             if input_str.strip().isdigit():
@@ -105,9 +105,9 @@ class NavigateTerminal():
 class Search():
     def __init__(self):
         n = NavigateTerminal()
-        p = PageRank()
+        p = PageRank("pageranks.json")
         self.searchterm = n.searchterm
-        self.all_pages = list(p.sorted_dict.keys())
+        self.all_pages = list(p.rank_dict.keys())
         self.searchdict = self.return_indexes()  
 
     def return_indexes(self):
@@ -143,17 +143,18 @@ class Search():
 
 class ShowResults():
     def __init__(self):
+        Welcome()
         self.s = Search()
-        if self.s.searchdict is None:
+        while not self.s.searchdict:
             print(f"{YELLOW}Nothing found... please try again!{RESET}")
-            self.reset()
+            self.s = Search()
         self.results = list(self.s.searchdict.keys())
         self.first_page: str = self.results[0]
         self.first_values = list(self.s.searchdict[self.first_page])
         self.inv_id_dict = self.get_id_dict()
         self.res_html = [self.find_link(x) for x in self.results]
         self.iterator = iter(self.results)
-        self.testing = self.test()
+        #self.testing = self.test()
 
 
     def get_id_dict(self):
@@ -175,70 +176,69 @@ class ShowResults():
         return link
         
     def print_out(self):
-        #Import the html file
-        #url_it = iter(self.results)
-        first = next(self.iterator)
-        p = first
-        h = HtmlImport("pages/"+first)         
-        text = h.text
-        i = 0
-        found_string = self.s.searchdict[first][0]
-        output: str = text[found_string[0]:found_string[1]+300]
-        output = output.replace("\n", " ")
-        link = self.find_link(first)
-        print(f"{RED}{output} ...")
-        print("\n")
-        print("\n")
-        print(f"{BLUE}Link: {link}")
-        print("\n")
-        print("\n")
-        while True:
-            try:
-                inp = input(f"{BLUE}Type 'np' if you want to see the next pages result\nType 'nr' if you want to see the next result on this page.\nType 'exit 'to leave.\n\n{RED}")
-                print("\n")
-                print("\n")
-                if inp == "exit":
-                    print("Thanks")
+        try:
+            first = next(self.iterator)
+            p = first
+            h = HtmlImport("pages/"+first)         
+            text = h.text
+            i = 0
+            found_string = self.s.searchdict[first][0]
+            output: str = text[found_string[0]:found_string[1]+300]
+            output = output.replace("\n", " ")
+            link = self.find_link(first)
+            print(f"{RED}{output} ...")
+            print("\n")
+            print("\n")
+            print(f"{BLUE}Link: {link}")
+            print("\n")
+            print("\n")
+            while True:
+                try:
+                    inp = input(f"{YELLOW}Type 'np' if you want to see the next pages result\nType 'nr' if you want to see the next result on this page.\nType 'exit' or 'Strg + C' to leave.\n\n{RED}")
+                    print("\n")
+                    print("\n")
+                    if inp == "exit":
+                        print("Thanks")
+                        return False
+                    if inp == "np":
+                        nxt = next(self.iterator)
+                        p = nxt
+                        h = HtmlImport("pages/"+nxt)         
+                        text = h.text
+                        found_string = self.s.searchdict[nxt][0]
+                        output: str = text[found_string[0]:found_string[1]+300]
+                        output = output.replace("\n", " ")
+                        link = self.find_link(nxt)
+                        print(f"{RED}{output} ...")
+                        print("\n")
+                        print("\n")
+                        print(f"{BLUE}Link: {link}")
+                        print("\n")
+                        print("\n")
+                    if inp == "nr":
+                        i += 1
+                        h = HtmlImport("pages/"+p)         
+                        text = h.text
+                        found_string = self.s.searchdict[p][i]
+                        output: str = text[found_string[0]:found_string[1]+500]
+                        output = output.replace("\n", " ")
+                        link = self.find_link(p)
+                        print(f"{RED}{output} ...")
+                        print("\n")
+                        print("\n")
+                        print(f"{BLUE}Link: {link}{RESET}")
+                        print("\n")
+                        print("\n")
+                except StopIteration as e:
+                    print("No more results...")
                     return False
-                if inp == "np":
-                    nxt = next(self.iterator)
-                    p = nxt
-                    h = HtmlImport("pages/"+nxt)         
-                    text = h.text
-                    found_string = self.s.searchdict[nxt][0]
-                    output: str = text[found_string[0]:found_string[1]+300]
-                    output = output.replace("\n", " ")
-                    link = self.find_link(nxt)
-                    print(f"{RED}{output} ...")
-                    print("\n")
-                    print("\n")
-                    print(f"{BLUE}Link: {link}")
-                    print("\n")
-                    print("\n")
-                if inp == "nr":
-                    i += 1
-                    h = HtmlImport("pages/"+p)         
-                    text = h.text
-                    found_string = self.s.searchdict[p][i]
-                    output: str = text[found_string[0]:found_string[1]+500]
-                    output = output.replace("\n", " ")
-                    link = self.find_link(p)
-                    print(f"{RED}{output} ...")
-                    print("\n")
-                    print("\n")
-                    print(f"{BLUE}Link: {link}{RESET}")
-                    print("\n")
-                    print("\n")
-            except StopIteration as e:
-                print("No more results...")
-                return False
-            except IndexError as e:
-                print("No more results on this page!")
-                continue    
-    @classmethod
-    def reset(cls):
-        cls.instance = None        # First clear Foo.instance so that __init__ does not fail
-        cls.instance = ShowResults()
+                except IndexError as e:
+                    print("No more results on this page!")
+                    continue    
+        except KeyboardInterrupt:
+            print(f"{RED}Thank You.")
+
+
 if __name__ == "__main__":
     s = ShowResults()
     s.print_out()

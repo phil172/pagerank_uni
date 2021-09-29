@@ -39,10 +39,10 @@ class Graph():
         return self.graph
 
 
-
-gr = Graph(idpath, datapath)
-graph = gr.get_graphs()
-gr.to_json("id_graph.json")
+if __name__ == "__main__":
+    gr = Graph(idpath, datapath)
+    graph = gr.get_graphs()
+    gr.to_json("id_graph.json")
 
 
 
